@@ -1,0 +1,7 @@
+Resources: 
+  DevEc2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId:  ami-0d542ef84ec55d71c
+      InstanceType: "t2.micro"
+      KeyName: "DevKey"
