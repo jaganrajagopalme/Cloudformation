@@ -1,0 +1,19 @@
+Resources: 
+  StageEc2Instance:
+    Type: AWS::EC2::Instance 
+    Properties:
+      ImageId: ami-0d542ef84ec55d71c
+      InstanceType: "t2.micro"
+      KeyName: "DevKey"     
+      SecurityGroups:
+        - default 
+        - !Ref SSHSecurityGroup
+  SSHSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: "EC2 Security Group"
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0          
+          FromPort: '80'
+          ToPort: '80'
+          IpProtocol: tcp
