@@ -1,0 +1,39 @@
+Parameters:
+  MyKeyName:
+    Description: Please select the keyName
+    Type: AWS::EC2::KeyPair::KeyName
+  MyAvaiablityZone:
+    Description: Please select the avaiablity zone
+    Type: String
+    Default:  us-east-2a
+    AllowedValues:
+      - us-east-2a
+      - us-east-2b
+      - us-east-2c
+
+Resources: 
+  StageEc2Instance:
+    Type: AWS::EC2::Instance 
+    Properties:
+      ImageId: ami-0d542ef84ec55d71c
+      InstanceType: "t2.micro"
+      KeyName: !Ref MyKeyName    
+      SecurityGroups:
+        - default 
+        - !Ref SSHSecurityGroup 
+      AvailabilityZone: !Ref MyAvaiablityZone       
+  SSHSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: "EC2 Security Group"
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0          
+          FromPort: '80'
+          ToPort: '80'
+          IpProtocol: tcp
+        - CidrIp : 0.0.0.0/0
+          FromPort: '8080'
+          ToPort: '8080'
+          IpProtocol: tcp
+  
+                    
