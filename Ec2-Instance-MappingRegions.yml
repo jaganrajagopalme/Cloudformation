@@ -1,0 +1,37 @@
+Parameters:
+  MyKeyName:
+    Description: Please select the keyName
+    Type: AWS::EC2::KeyPair::KeyName  
+Mappings:
+  MyregionMap:
+    us-east-2: 
+      HVM64: ami-0d808701ac55e8ef7
+      HVMG2: ami-0c929bde1796e1484     
+    us-west-1:
+      HVM64: ami-03caa3f860895f82e 
+      HVMG2: ami-04bc3da8f14823e88       
+Resources: 
+  StageEc2Instance:
+    Type: AWS::EC2::Instance 
+    Properties:
+      ImageId: !FindInMap [MyregionMap , !Ref "AWS::Region",HVMG2]       
+      InstanceType: t2.micro
+      KeyName: !Ref MyKeyName    
+      SecurityGroups:
+        - default 
+        - !Ref SSHSecurityGroup            
+  SSHSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: "EC2 Security Group"
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0          
+          FromPort: '80'
+          ToPort: '80'
+          IpProtocol: tcp
+        - CidrIp : 0.0.0.0/0
+          FromPort: '8080'
+          ToPort: '8080'
+          IpProtocol: tcp
+  
+                    
