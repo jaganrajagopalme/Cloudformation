@@ -1,0 +1,69 @@
+Parameters:
+  MyDevKeyName:
+    Description: Please enter the KeyName 
+    Type: AWS::EC2::KeyPair::KeyName
+  EnvirnomentName:
+    Description: Select the enviroment type
+    Type: String
+    Default: Dev
+    AllowedValues:
+      - Dev
+      - Test
+      - Prod
+Mappings:
+  EnvirnomentInstanceType:
+    Dev:
+      Instancetype: t2.nano
+    Test:  
+      Instancetype: t2.micro
+    Prod:  
+      Instancetype: t2.small  
+Conditions:
+  EIPforProdCondition: !Equals [!Ref EnvirnomentName, Prod]      
+  CreateDevSecurityGroup: !Equals [!Ref EnvirnomentName, Dev]
+Resources:
+  DevInstance:
+    Description : EC2 instance Resource
+    Type : AWS::EC2::Instance    
+    Properties:
+      ImageId: ami-0d542ef84ec55d71c
+      InstanceType: !FindInMap
+        - EnvirnomentInstanceType
+        - !Ref EnvirnomentName 
+        - Instancetype
+      KeyName: !Ref MyDevKeyName
+      SecurityGroups: !If [CreateDevSecurityGroup, [!Ref DevSecurityGroup], !Ref 'AWS::NoValue'] 
+  SSHSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: "EC2 Security Group"
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0          
+          FromPort: '80'
+          ToPort: '80'
+          IpProtocol: tcp
+        - CidrIp : 0.0.0.0/0
+          FromPort: '8080'
+          ToPort: '8080'
+          IpProtocol: tcp
+  DevSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Condition: CreateDevSecurityGroup
+    Properties:
+      GroupDescription: "Dev Security Group"     
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0          
+          FromPort: '22'
+          ToPort: '22'
+          IpProtocol: tcp
+        - CidrIp : 0.0.0.0/0
+          FromPort: '134'
+          ToPort: '154'
+          IpProtocol: tcp        
+  ProdEIPInstance:
+    Type: AWS::EC2::EIP
+    Condition: EIPforProdCondition
+    Properties:
+      InstanceId: !Ref DevInstance
+                
+
