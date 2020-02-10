@@ -1,0 +1,76 @@
+Parameters:
+  InstanceType:
+    Description: EC2 Instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.nano
+      - t2.micro
+      - t2.small
+        
+  KeyName:
+    Description: Please enter the KeyName 
+    Type: AWS::EC2::KeyPair::KeyName
+  EnvirnomentName:
+    Description: Select the enviroment type
+    Type: String
+    Default: Dev
+    AllowedValues:
+      - Dev
+      - Test
+      - Prod
+ 
+Conditions:
+  EIPforProdCondition: !Equals [!Ref EnvirnomentName, Prod]      
+  CreateDevSecurityGroup: !Equals [!Ref EnvirnomentName, Dev]
+  CreateProdSecurityGroup: !Not [{Condition: CreateDevSecurityGroup}]
+  AWSCreateKeyName: !And [ !Or [!Equals [!Ref 'AWS::Region',us-east-2], !Equals [ !Ref 'AWS::Region',us-west-2]], !Equals [!Ref EnvirnomentName, Dev]]
+Metadata:
+  AWS::Cloudformation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Please Select the EC2 Confriguation"
+        Parameters:
+          - InstanceType
+          - KeyName
+          - AvaiabilityZone
+      - Label:
+          default: "Envirnoment Confirguation"
+        Parameters: 
+          - EnvirnomentName      
+    ParameterLabels:
+      EnvirnomentName:
+        default:  "Which Envirnoment are planning to create the instance"
+      KeyName:
+        default: "Once you have selected the Keyname "   
+Resources:
+  DevInstance:
+    Description : EC2 instance Resource
+    Type : AWS::EC2::Instance    
+    Properties:
+      ImageId: ami-0d542ef84ec55d71c
+      InstanceType: !Ref InstanceType        
+      KeyName: !If [AWSCreateKeyName,DevKey,production]
+      SecurityGroups: 
+        - !ImportValue DevSecurityGroupExportConfig
+      AvailabilityZone: !ImportValue outputCondition-Avaiblityzone 
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          sudo yum update
+          sudo yum -y erase java-1.7.0-opendjdk.x86_64
+          sudo yum -y install java-1.8.0-openjdk.x86_64
+          sudo yum -y install java-1.8.0-openjdx-devel
+          sudo yum -y install tomcat8
+          service tomcat8 start
+          mkdir /usr/share/tomcat8/webapps/ROOT
+          touch /usr/share/tomcat8/webapps/ROOT/index.html
+          echo "CloudFormation created via Userdata Tomcat8" > /usr/share/tomcat8/webapps/ROOT/index.htm
+  ProdEIPInstance:
+    Type: AWS::EC2::EIP
+    Condition: EIPforProdCondition
+    Properties:
+      InstanceId: !Ref DevInstance
+   
+    
+
