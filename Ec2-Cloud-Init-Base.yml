@@ -1,0 +1,22 @@
+Parameters:
+  MyDevKeyName:
+    Description: Please enter the KeyName 
+    Type: AWS::EC2::KeyPair::KeyName 
+Resources:
+  UATSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Ec2 Security Groups
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+  UATInstance:
+    Type: AWS::EC2::Instance    
+    Description: Ec2 resource Instance 
+    Properties:
+      ImageId: ami-0d542ef84ec55d71c
+      KeyName: !Ref MyDevKeyName
+      InstanceType: t2.micro
+      SecurityGroups: !Ref UATSecurityGroup
