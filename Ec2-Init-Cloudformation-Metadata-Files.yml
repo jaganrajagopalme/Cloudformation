@@ -1,0 +1,58 @@
+Parameters:
+  MyDevKeyName:
+    Description: Please enter the KeyName 
+    Type: AWS::EC2::KeyPair::KeyName 
+Resources:
+  UATSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Ec2 Security Groups
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+  UATInstance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::Cloudformation::Init
+        config:
+          package:
+            yum: 
+              java-1.8.0-openjdk.x86_x64: []
+              java-1.8.0-openjdk-devel: []
+        groups:
+          Devgroup: {}
+          UATGroup: 
+            gid: "1234"
+        users:
+          DevUser:
+            groups: 
+              - DevReadaccess
+              - DevWriteaccess
+            uid: "345"
+            homeDir: "/tmp"
+        sources:
+          /tmp: "http://testerbucketbox.s3-website.ap-south-1.amazonaws.com/mydata.zip"
+        files: 
+          "/etc/cfn/cfn-hup.conf"
+          content: !Sub  |
+            [main]
+            stack=${AWS::StackId}
+            region=${AWS::Region}
+            interval=7
+          mode: "000400"
+          owner: "root"   
+          groups: "root" 
+           "/etc/cfn/hooks.d/cfn-auto-reloader.conf"   
+          content: !Sub
+             [cfn-auto-reloader-hook]
+              triggers=post.update
+              path=Resources.UATInstance.Metadata.AWS::Cloudformation::Init
+        commands: 
+    Description: Ec2 resource Instance 
+    Properties:
+      ImageId: ami-0d542ef84ec55d71c
+      KeyName: !Ref MyDevKeyName
+      InstanceType: t2.micro
+      SecurityGroups: !Ref UATSecurityGroup
