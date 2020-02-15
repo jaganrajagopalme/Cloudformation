@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Demo on Nested stack for creation of Ec2 Instance"
+Parameters:
+  VPCCidrBlock:
+    Type: String
+    Default: 10.0.0.0/16
+    Description: Cidr Block for VPC Block
+  SubnetCidrBlock:
+    Type: String
+    Default: 10.0.0.0/24
+    Description: Cidr Block for subNet level
+Metadata:
+ AWS::CloudFormation::Interface:
+   ParameterGroups:
+      - Label:
+          default: Paremeters for VPC Cidr and Subnet Block
+          Parameters: 
+            - VPCCidrBlock
+            - SubnetCidrBlock 
+   ParameterLabels:
+     Default: VPC Cidr Block for Network 
+
+
+Resources:
+  myVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCCidrBlock
+      EnableDnsHostnames: 'true'
+      EnableDnsSupport: 'true'
+      Tags: 
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-myvpc"
+  subnet01:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref myVPC
+      CidrBlock: !Ref SubnetCidrBlock
+      Tags: 
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-subnet01"
+      AvailabilityZone: 
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: !Ref 'AWS::Region'
+  Routetable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref myVPC
+      Tags: 
+         - Key: Name
+           Value: public subnet
+           Key: Network
+           Value: Public  
+  Subnet01routetableassociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref subnet01
+      RouteTableId: !Ref Routetable
+  MyInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties: 
+      Tags:
+       - Key: Internetgatewaypublic
+         Value: IGWPublic 
+  VPCInternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref MyInternetGateway
+      VpcId: !Ref myVPC
+  Route:
+    Type: AWS::EC2::Route
+    Properties: 
+      RouteTableId: !Ref Routetable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref MyInternetGateway
+Outputs:
+  Subnet01Ids:
+    Description: the output of subnetId
+    Value: !Ref subnet01
+  VpcId:
+    Description: the output of vpcId
+    Value: !Ref myVPC
+  
+
+
+    
