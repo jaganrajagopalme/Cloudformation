@@ -49,6 +49,10 @@ Resources:
              [cfn-auto-reloader-hook]
               triggers=post.update
               path=Resources.UATInstance.Metadata.AWS::Cloudformation::Init
+              action=/op/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource MyVMInstance --regon ${AWS::Region}
+            mode: "000400"
+            owner: "root"
+            group:            
         commands: 
     Description: Ec2 resource Instance 
     Properties:

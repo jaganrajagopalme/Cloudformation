@@ -1,0 +1,47 @@
+Parameters:
+  MyKeyName:
+    Description: Please select the keyName
+    Type: AWS::EC2::KeyPair::KeyName 
+  VPCCidrBlock:
+    Type: String
+    Default: 10.0.0.0/16
+    Description: Cidr Block for VPC Block
+  SubnetCidrBlock:
+    Type: String
+    Default: 10.0.0.0/24
+    Description: Cidr Block for subNet level   
+
+Resources:
+  VPCBlock:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: https://testerbucketbox.s3.ap-south-1.amazonaws.com/Ec2-NestedStackBase.yml
+      Parameters:
+        VPCCidrBlock: !Ref VPCCidrBlock
+        SubnetCidrBlock: !Ref SubnetCidrBlock
+      TimeoutInMinutes: 5     
+  UATInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0d542ef84ec55d71c
+      InstanceType: t2.micro
+      KeyName: !Ref  MyKeyName
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          SubnetId: !GetAtt VPCBlock.Outputs.Subnet01Ids
+      UserData:
+        Fn::Base64: |
+            #!/bin/bash
+            sudo yum update 
+            sudo yum -y erase java-1.7.0-openjdk-x86_64
+            sudo yum -y install java-1.8.0-openjdk-x86_64
+            sudo yum -y install java-1.8.0-openjdk-x86_devel
+            sudo yum -y install tomcat8
+            service tomcat8 start
+            mkdir /usr/share/tomcat8/webapps/ROOT
+            touch /usr/share/tomcat8/webapps/ROOT/index.html
+            echo "cloudFormation "> "/usr/share/tomcat8/webapps/ROOT/index.html"
+Outputs:
+  APPURL:
+    Value: !Sub "https://${UATInstance.PublicDnsName}:8080/index.html"
